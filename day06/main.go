@@ -27,6 +27,26 @@ func main() {
 		}
 		fmt.Println(total)
 	}
+
+	// Alternative solution by u/ligirl transcribed from Python to Go.
+	// https://www.reddit.com/r/adventofcode/comments/r9z49j/comment/hnfmnml/
+	if false {
+		var counts [9]int64
+		for _, fish := range school {
+			counts[fish]++
+		}
+		for day := 0; day < 256; day++ {
+			spawners := counts[0]
+			copy(counts[0:8], counts[1:9])
+			counts[6] += spawners
+			counts[8] = spawners
+		}
+		var total int64
+		for _, count := range counts {
+			total += count
+		}
+		fmt.Println(total)
+	}
 }
 
 var memory = make(map[int]int64)
