@@ -58,6 +58,14 @@ func readFile(filename string) string {
 	return strings.TrimSpace(string(bytes))
 }
 
+func arrayToInt(input []string) (output []int) {
+	output = make([]int, len(input))
+	for i, text := range input {
+		output[i] = toInt(text)
+	}
+	return output
+}
+
 func toInt(s string) int {
 	result, err := strconv.Atoi(s)
 	check(err)
