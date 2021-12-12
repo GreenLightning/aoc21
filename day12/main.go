@@ -33,45 +33,58 @@ func main() {
 
 	{
 		fmt.Println("--- Part One ---")
-		paths := buildPaths([]Path{}, Path{"start"}, connections, false)
+		paths := buildPaths([]Path{}, Path{"start"}, connections, false, "")
 		fmt.Println(len(paths))
 	}
 
 	{
 		fmt.Println("--- Part Two ---")
-		paths := buildPaths([]Path{}, Path{"start"}, connections, true)
-
-		unique := make(map[string]bool)
-		for _, path := range paths {
-			unique[fmt.Sprint(path)] = true
-		}
-
-		fmt.Println(len(unique))
+		paths := buildPaths([]Path{}, Path{"start"}, connections, true, "")
+		fmt.Println(len(paths))
 	}
 }
 
 // buildPaths constructs all paths starting with prefix using the available connections.
 // This function appends its results to paths and then returns paths (like append()).
-// If extra is true it is allowed to visit a small cave twice after the prefix.
-func buildPaths(paths []Path, prefix Path, connections []Connection, extra bool) []Path {
+// If twiceAllowed is true, it is allowed to visit a small cave twice after the prefix.
+// If mustVisit is not empty, this small cave must be visited again after the prefix.
+func buildPaths(paths []Path, prefix Path, connections []Connection, twiceAllowed bool, mustVisit string) []Path {
+
+	// First we have to find a connection that starts with the last element of the prefix.
 	connector := prefix[len(prefix)-1]
 	for _, conn := range connections {
 		if connector != conn[0] {
 			continue
 		}
+
 		end := conn[1]
+		isSmall := (end == strings.ToLower(end))
+
+		// Make a new path from prefix and the given connection.
 		path := make(Path, len(prefix)+1)
 		copy(path, prefix)
 		path[len(path)-1] = end
+
+		// If we are at "end" this is a complete path.
 		if end == "end" {
-			paths = append(paths, path)
+			// But we only add it to the output if it is valid,
+			// i.e. we do not have a small cave left to visit.
+			if mustVisit == "" {
+				paths = append(paths, path)
+			}
 			continue
 		}
-		if extra {
-			paths = buildPaths(paths, path, connections, false)
+
+		if isSmall && twiceAllowed {
+			// Build all the paths that use end twice by using
+			// the same connections and setting mustVisit to end.
+			paths = buildPaths(paths, path, connections, false, end)
 		}
+
 		var filteredConnections = connections
-		if end == strings.ToLower(end) {
+		if isSmall {
+			// If this is a small cave, we remove all the connections leading
+			// to the cave to avoid visiting it again.
 			filteredConnections = make([]Connection, 0, len(connections))
 			for _, conn := range connections {
 				if conn[1] != end {
@@ -79,8 +92,15 @@ func buildPaths(paths []Path, prefix Path, connections []Connection, extra bool)
 				}
 			}
 		}
-		paths = buildPaths(paths, path, filteredConnections, extra)
+
+		var filteredMustVisit = mustVisit
+		if end == mustVisit {
+			filteredMustVisit = ""
+		}
+
+		paths = buildPaths(paths, path, filteredConnections, twiceAllowed, filteredMustVisit)
 	}
+
 	return paths
 }
 
