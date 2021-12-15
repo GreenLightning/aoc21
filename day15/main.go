@@ -3,8 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 )
+
+type Vector2 struct {
+	x, y int
+}
 
 func main() {
 	lines := readLines("input.txt")
@@ -49,62 +54,39 @@ func findShortestPath(grid [][]int) int {
 	costs := make([][]int, len(grid))
 	for y, row := range grid {
 		costs[y] = make([]int, len(row))
+		for x := range costs[y] {
+			costs[y][x] = math.MaxInt / 2
+		}
 	}
 
 	h, w := len(grid), len(grid[0])
-
 	costs[h-1][w-1] = grid[h-1][w-1]
+	queue := []Vector2{Vector2{w - 2, h - 1}, Vector2{w - 1, h - 2}}
 
-	for d := h - 2; d >= 0; d-- {
-		for i := 0; d+i < w; i++ {
-			x, y := d+i, h-1-i
-			if x == w-1 {
-				costs[y][x] = grid[y][x] + costs[y+1][x]
-			} else if y == h-1 {
-				costs[y][x] = grid[y][x] + costs[y][x+1]
-			} else {
-				costs[y][x] = grid[y][x] + min(costs[y+1][x], costs[y][x+1])
-			}
-		}
-	}
+	for len(queue) != 0 {
+		p := queue[0]
+		queue = queue[1:]
+		x, y := p.x, p.y
 
-	for d := h - 2; d >= 0; d-- {
-		for i := 0; d-i >= 0; i++ {
-			x, y := i, d-i
-			if x == w-1 {
-				costs[y][x] = grid[y][x] + costs[y+1][x]
-			} else if y == h-1 {
-				costs[y][x] = grid[y][x] + costs[y][x+1]
-			} else {
-				costs[y][x] = grid[y][x] + min(costs[y+1][x], costs[y][x+1])
-			}
+		if !(x >= 0 && x < w && y >= 0 && y < h) {
+			continue
 		}
-	}
 
-	for {
-		changed := false
-		for y := 0; y < h; y++ {
-			for x := 0; x < w; x++ {
-				if x-1 >= 0 && grid[y][x]+costs[y][x-1] < costs[y][x] {
-					costs[y][x] = grid[y][x] + costs[y][x-1]
-					changed = true
-				}
-				if x+1 < w && grid[y][x]+costs[y][x+1] < costs[y][x] {
-					costs[y][x] = grid[y][x] + costs[y][x+1]
-					changed = true
-				}
-				if y-1 >= 0 && grid[y][x]+costs[y-1][x] < costs[y][x] {
-					costs[y][x] = grid[y][x] + costs[y-1][x]
-					changed = true
-				}
-				if y+1 < h && grid[y][x]+costs[y+1][x] < costs[y][x] {
-					costs[y][x] = grid[y][x] + costs[y+1][x]
-					changed = true
-				}
-			}
+		if x-1 >= 0 && grid[y][x]+costs[y][x-1] < costs[y][x] {
+			costs[y][x] = grid[y][x] + costs[y][x-1]
+			queue = append(queue, Vector2{x + 1, y}, Vector2{x, y - 1}, Vector2{x, y + 1})
 		}
-		if !changed {
-			break
+		if x+1 < w && grid[y][x]+costs[y][x+1] < costs[y][x] {
+			costs[y][x] = grid[y][x] + costs[y][x+1]
+			queue = append(queue, Vector2{x - 1, y}, Vector2{x, y - 1}, Vector2{x, y + 1})
+		}
+		if y-1 >= 0 && grid[y][x]+costs[y-1][x] < costs[y][x] {
+			costs[y][x] = grid[y][x] + costs[y-1][x]
+			queue = append(queue, Vector2{x - 1, y}, Vector2{x + 1, y}, Vector2{x, y + 1})
+		}
+		if y+1 < h && grid[y][x]+costs[y+1][x] < costs[y][x] {
+			costs[y][x] = grid[y][x] + costs[y+1][x]
+			queue = append(queue, Vector2{x - 1, y}, Vector2{x + 1, y}, Vector2{x, y - 1})
 		}
 	}
 
@@ -129,11 +111,4 @@ func check(err error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func min(x, y int) int {
-	if y < x {
-		return y
-	}
-	return x
 }
